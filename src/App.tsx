@@ -1,14 +1,16 @@
-"use client";
 import { useEffect, useState } from "react";
 import { v4 as uuid } from "uuid";
+import "./App.css";
 
 const userId = uuid();
 
-export default function Home() {
+const port = import.meta.env.VITE_PORT || 3000;
+
+function App() {
   const [client, setClient] = useState<WebSocket | null>(null);
   const [message, setMessage] = useState<string>("");
   useEffect(() => {
-    const client = new WebSocket("ws://localhost:8080");
+    const client = new WebSocket(`ws://localhost:${port}`);
     client.onopen = () => {
       console.log("WebSocket connection opened");
     };
@@ -40,3 +42,5 @@ export default function Home() {
     </div>
   );
 }
+
+export default App;

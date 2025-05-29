@@ -1,35 +1,26 @@
-import { WebSocketServer, WebSocket } from "ws";
+import express from "express";
+import { WebSocketServer } from "ws";
+import { createServer } from "http";
+import { config } from "dotenv";
+config();
 
-const wss = new WebSocketServer({ port: 8080 });
-console.log("WebSocket server started on ws://localhost:8080");
+const app = express();
 
-interface Client {
-  ws: WebSocket;
-  id: string;
-  roomId?: string;
-}
+const server = createServer(app);
 
-interface Room {
-  id: string;
-  clients: Set<Client>;
-}
+const wss = new WebSocketServer({ server });
 
-const rooms = new Map<string, Room>();
+app.use(express.static("dist"));
 
-type MessageType = "join" | "leave" | "message" | "joined" | "left" | "create";
+const rooms = new Map();
 
-type Message = {
-  type: MessageType;
-  [key: string]: any;
-};
-
-function createRoom(roomId: string): Room {
-  const room: Room = { id: roomId, clients: new Set() };
+function createRoom(roomId) {
+  const room = { id: roomId, clients: new Set() };
   rooms.set(roomId, room);
   return room;
 }
 
-function joinRoom(client: Client, roomId: string): void {
+function joinRoom(client, roomId) {
   let room = rooms.get(roomId);
   if (!room) {
     throw new Error(`Room ${roomId} does not exist`);
@@ -38,25 +29,26 @@ function joinRoom(client: Client, roomId: string): void {
   client.roomId = roomId;
 }
 
-function leaveRoom(client: Client): void {
+function leaveRoom(client) {
   if (!client.roomId) {
     throw new Error("Client is not in a room");
   }
-  const room = rooms.get(client.roomId!);
+  const room = rooms.get(client.roomId);
   if (room) {
     room.clients.delete(client);
     if (room.clients.size === 0) {
-      rooms.delete(client.roomId!);
+      rooms.delete(client.roomId);
     }
   }
 }
 
-function sendMessageToRoom(room: Room, message: Message): void {
+function sendMessageToRoom(room, message) {
   room.clients.forEach((client) => {
     client.ws.send(JSON.stringify(message));
   });
 }
 
+// WebSocket connection handling
 wss.on("connection", (ws) => {
   ws.on("error", (error) => {
     console.error("WebSocket error:", error);
@@ -64,11 +56,11 @@ wss.on("connection", (ws) => {
 
   ws.on("message", (message) => {
     try {
-      const msg = JSON.parse(message.toString()) as Message;
+      const msg = JSON.parse(message.toString());
       switch (msg.type) {
         case "create": {
           const room = createRoom(msg.roomId);
-          const client: Client = { ws, id: msg.id, roomId: room.id };
+          const client = { ws, id: msg.id, roomId: room.id };
           room.clients.add(client);
           sendMessageToRoom(room, {
             type: "joined",
@@ -83,4 +75,11 @@ wss.on("connection", (ws) => {
       console.error("Error parsing message:", error);
     }
   });
+});
+
+const port = process.env.VITE_PORT || 3000;
+
+server.listen(port, () => {
+  console.log(`Server is running on http://localhost:${port}`);
+  console.log(`WebSocket server is also running on ws://localhost:${port}`);
 });
