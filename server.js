@@ -12,6 +12,7 @@ const wss = new WebSocketServer({ server });
 
 app.use(express.static("dist"));
 
+/** @type {Map<string, Room>} */
 const rooms = new Map();
 
 function createRoom(roomId) {
@@ -42,6 +43,11 @@ function leaveRoom(client) {
   }
 }
 
+/**
+ *
+ * @param {Room} room
+ * @param {Message} message
+ */
 function sendMessageToRoom(room, message) {
   room.clients.forEach((client) => {
     client.ws.send(JSON.stringify(message));
@@ -56,6 +62,7 @@ wss.on("connection", (ws) => {
 
   ws.on("message", (message) => {
     try {
+      /** @type {Message} */
       const msg = JSON.parse(message.toString());
       switch (msg.type) {
         case "create": {
@@ -63,8 +70,22 @@ wss.on("connection", (ws) => {
           const client = { ws, id: msg.id, roomId: room.id };
           room.clients.add(client);
           sendMessageToRoom(room, {
-            type: "joined",
-            message: "User joined room",
+            type: "created",
+            roomId: room.id,
+          });
+          break;
+        }
+        case "setVideoUrl": {
+          const roomToSet = rooms.get(msg.roomId);
+          if (!roomToSet) {
+            ws.send(
+              JSON.stringify({ type: "error", message: "Room not found" })
+            );
+            return;
+          }
+          sendMessageToRoom(roomToSet, {
+            type: "setVideoUrl",
+            videoUrl: msg.videoUrl,
           });
           break;
         }

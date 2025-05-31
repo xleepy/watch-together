@@ -1,44 +1,52 @@
-import { useEffect, useState } from "react";
-import { v4 as uuid } from "uuid";
+import { useState } from "react";
 import "./App.css";
-
-const userId = uuid();
-
-const port = import.meta.env.VITE_PORT || 3000;
+import { CreateRoom } from "./CreateRoom";
+import { useMessagesContext } from "./MessagesProvider";
 
 function App() {
-  const [client, setClient] = useState<WebSocket | null>(null);
-  const [message, setMessage] = useState<string>("");
-  useEffect(() => {
-    const client = new WebSocket(`ws://localhost:${port}`);
-    client.onopen = () => {
-      console.log("WebSocket connection opened");
-    };
-    client.onmessage = (event) => {
-      setMessage(JSON.stringify(event.data));
-    };
-    client.onerror = (error) => {
-      console.error("WebSocket error:", error);
-    };
-    setClient(client);
-    return () => {
-      client.close();
-      console.log("WebSocket connection closed");
-    };
-  }, []);
+  const { state, dispatchMessage } = useMessagesContext();
+  const [currentUrl, setCurrentUrl] = useState("");
 
-  if (!client) {
-    return <div>Connecting to socket</div>;
+  if (!state.isConnected) {
+    return <CreateRoom />;
   }
 
-  const createRoom = () => {
-    client.send(JSON.stringify({ type: "create", roomId: userId }));
-  };
+  console.log("App state:", state);
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-24">
-      <p>{`Your room id: ${userId}`}</p>
-      <p>{message}</p>
-      <button onClick={createRoom}>Create room</button>
+      <p>{state.roomId}</p>
+      {!state.url && (
+        <>
+          <input
+            type="text"
+            placeholder="set url to watch"
+            value={currentUrl}
+            onChange={(event) => setCurrentUrl(event.target.value)}
+          />
+          <button
+            disabled={!currentUrl}
+            onClick={() => {
+              dispatchMessage({
+                type: "setVideoUrl",
+                roomId: state.roomId,
+                videoUrl: currentUrl,
+              });
+            }}
+          >
+            Set Video URL
+          </button>
+        </>
+      )}
+      {state.url && (
+        <video
+          autoPlay
+          className="video"
+          src={state.url}
+          crossOrigin="anonymous"
+          controls
+        />
+      )}
     </div>
   );
 }
