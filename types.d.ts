@@ -28,6 +28,7 @@ type GenericMessage = {
 type ConnectToRoomMessage = {
   type: "created" | "joined";
   roomId: string;
+  url?: string;
 };
 
 type SetVideoUrlMessage = {

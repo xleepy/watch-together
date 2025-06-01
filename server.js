@@ -16,7 +16,7 @@ app.use(express.static("dist"));
 const rooms = new Map();
 
 function createRoom(roomId) {
-  const room = { id: roomId, clients: new Set() };
+  const room = { id: roomId, clients: new Set(), url: null };
   rooms.set(roomId, room);
   return room;
 }
@@ -65,6 +65,25 @@ wss.on("connection", (ws) => {
       /** @type {Message} */
       const msg = JSON.parse(message.toString());
       switch (msg.type) {
+        case "join": {
+          const room = rooms.get(msg.roomId);
+          if (!room) {
+            ws.send(
+              JSON.stringify({ type: "error", message: "Room not found" })
+            );
+            return;
+          }
+          const client = { ws, id: msg.id, roomId: msg.roomId };
+          joinRoom(client, msg.roomId);
+          room.clients.add(client);
+          sendMessageToRoom(room, {
+            type: "joined",
+            roomId: room.id,
+            clientId: client.id,
+            url: room.url,
+          });
+          break;
+        }
         case "create": {
           const room = createRoom(msg.roomId);
           const client = { ws, id: msg.id, roomId: room.id };

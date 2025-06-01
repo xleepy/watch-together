@@ -32,6 +32,7 @@ export const messagesReducer = (state: AppState, action: Message): AppState => {
       ...state,
       isConnected: true,
       roomId: roomAction.roomId,
+      url: roomAction.url, // Preserve existing URL if set
     };
   }
   if (action.type === "setVideoUrl" && state.roomId) {
