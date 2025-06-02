@@ -1,43 +1,53 @@
 import { useState } from "react";
 import { useMessagesContext } from "./MessagesProvider";
 
-export const Room = () => {
-  const { state, dispatchMessage } = useMessagesContext();
-  const [currentUrl, setCurrentUrl] = useState("");
+type RoomProps = {
+  roomId: string;
+};
 
+const AttachUrl = ({ roomId }: RoomProps) => {
+  const { dispatchMessage } = useMessagesContext();
+  const [currentUrl, setCurrentUrl] = useState("");
   return (
     <>
-      {!state.url && (
-        <>
-          <input
-            type="text"
-            placeholder="set url to watch"
-            value={currentUrl}
-            onChange={(event) => setCurrentUrl(event.target.value)}
-          />
-          <button
-            disabled={!currentUrl}
-            onClick={() => {
-              dispatchMessage({
-                type: "setVideoUrl",
-                roomId: state.roomId,
-                videoUrl: currentUrl,
-              });
-            }}
-          >
-            Set Video URL
-          </button>
-        </>
-      )}
-      {state.url && (
-        <video
-          autoPlay
-          className="video"
-          src={state.url}
-          crossOrigin="anonymous"
-          controls
-        />
-      )}
+      <input
+        type="text"
+        placeholder="set url to watch"
+        value={currentUrl}
+        onChange={(event) => setCurrentUrl(event.target.value)}
+      />
+      <button
+        disabled={!currentUrl}
+        onClick={() => {
+          dispatchMessage({
+            type: "setVideoUrl",
+            roomId: roomId,
+            url: currentUrl,
+          });
+        }}
+      >
+        Set Video URL
+      </button>
     </>
+  );
+};
+
+export const Room = ({ roomId }: RoomProps) => {
+  const { state } = useMessagesContext();
+
+  console.log("Room state:", state);
+
+  if (!state.url) {
+    return <AttachUrl roomId={roomId} />;
+  }
+
+  return (
+    <video
+      autoPlay
+      className="video"
+      src={state.url}
+      crossOrigin="anonymous"
+      controls
+    />
   );
 };

@@ -33,7 +33,7 @@ type ConnectToRoomMessage = {
 
 type SetVideoUrlMessage = {
   type: "setVideoUrl";
-  videoUrl: string;
+  url: string;
 };
 
 type Message = ConnectToRoomMessage | SetVideoUrlMessage | GenericMessage;

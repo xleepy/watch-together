@@ -1,19 +1,22 @@
+import { useState } from "react";
 import "./App.css";
 import { CreateRoom } from "./CreateRoom";
-import { useMessagesContext } from "./MessagesProvider";
 import { Room } from "./Room";
+import { MessagesProvider } from "./MessagesProvider";
 
 function App() {
-  const { state } = useMessagesContext();
+  const [roomId, setRoomId] = useState<string | null>(null);
 
-  if (!state.isConnected) {
-    return <CreateRoom />;
+  if (!roomId) {
+    return <CreateRoom onCreate={setRoomId} />;
   }
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-24">
-      <p>{state.roomId}</p>
-      <Room />
+      <p>{`Your room id ${roomId}`}</p>
+      <MessagesProvider roomId={roomId}>
+        <Room roomId={roomId} />
+      </MessagesProvider>
     </div>
   );
 }
