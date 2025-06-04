@@ -8,7 +8,6 @@ import {
   useState,
   type PropsWithChildren,
 } from "react";
-import { userId } from "./constants";
 
 interface AppState {
   isConnected: boolean;
@@ -26,46 +25,45 @@ const MessagesContext = createContext<MessageContextValue | null>(null);
 const port = import.meta.env.VITE_PORT || 3000;
 
 export const messagesReducer = (state: AppState, action: Message): AppState => {
-  console.log("Reducer action:", action);
-
-  if (action.type === "setVideoUrl") {
-    const videoUrlAction = action as SetVideoUrlMessage;
-    return {
-      ...state,
-      url: videoUrlAction.url,
-    };
+  switch (action.type) {
+    case "created":
+    case "joined": {
+      const connectAction = action as ConnectToRoomMessage;
+      return {
+        ...state,
+        isConnected: true,
+        roomId: connectAction.roomId,
+        url: connectAction.url,
+      };
+    }
+    case "setVideoUrl": {
+      const setVideoUrlAction = action as SetVideoUrlMessage;
+      return {
+        ...state,
+        url: setVideoUrlAction.url,
+      };
+    }
+    default:
+      return state;
   }
-  return state;
 };
 
 const initialState: AppState = {
   isConnected: false,
 };
 
-type MessagesProviderProps = PropsWithChildren & {
-  roomId: string;
-};
-
-export const MessagesProvider = ({
-  children,
-  roomId,
-}: MessagesProviderProps) => {
+export const ClientProvider = ({ children }: PropsWithChildren) => {
   const [client, setClient] = useState<WebSocket | null>(null);
   const [state, dispatch] = useReducer(messagesReducer, initialState);
   useEffect(() => {
     const client = new WebSocket(`ws://localhost:${port}`);
-
     client.onopen = () => {
       console.log("WebSocket connection opened");
-      client.send(JSON.stringify({ type: "register", roomId, userId }));
     };
     client.onmessage = (event) => {
       try {
         const receivedMsg: GenericMessage = JSON.parse(event.data);
         console.log("Received raw message:", receivedMsg);
-        if (receivedMsg.roomId && receivedMsg.roomId !== roomId) {
-          return;
-        }
         dispatch(receivedMsg);
       } catch (err) {
         console.error("Error parsing message:", err);
@@ -80,7 +78,7 @@ export const MessagesProvider = ({
       client.close();
       console.log("WebSocket connection closed");
     };
-  }, [roomId]);
+  }, []);
 
   const dispatchMessage = useCallback(
     (msg: GenericMessage) => {
@@ -105,7 +103,7 @@ export const MessagesProvider = ({
   );
 };
 
-export const useMessagesContext = () => {
+export const useClient = () => {
   const context = useContext(MessagesContext);
   if (!context) {
     throw new Error(

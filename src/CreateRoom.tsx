@@ -1,23 +1,11 @@
 import { useState } from "react";
+import { useClient } from "./ClientProvider";
 
-type CreateRoomProps = {
-  onCreate: (roomId: string) => void;
-};
-
-export const CreateRoom = ({ onCreate }: CreateRoomProps) => {
+export const CreateRoom = () => {
+  const { dispatchMessage } = useClient();
   const createRoom = async () => {
     try {
-      const resp = await fetch("http://localhost:3000/api/rooms/create", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-      if (!resp.ok) {
-        throw new Error("Failed to create room");
-      }
-      const data = await resp.json();
-      onCreate(data.roomId);
+      dispatchMessage({ type: "create" });
     } catch (error) {
       console.error("Error creating room:", error);
     }
@@ -27,27 +15,16 @@ export const CreateRoom = ({ onCreate }: CreateRoomProps) => {
     <div>
       <button onClick={createRoom}>Create room</button>
       <p>or</p>
-      <JoinRoom onCreate={onCreate} />
+      <JoinRoom />
     </div>
   );
 };
 
-const JoinRoom = ({ onCreate }: CreateRoomProps) => {
+const JoinRoom = () => {
+  const { dispatchMessage } = useClient();
   const [roomId, setRoomId] = useState("");
   const joinRoom = async () => {
-    try {
-      await fetch(`http://localhost:3000/api/rooms/join`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ roomId }),
-      });
-      console.log("Joining room with ID:", roomId);
-      onCreate(roomId);
-    } catch (error) {
-      console.error("Error joining room:", error);
-    }
+    dispatchMessage({ type: "join", roomId });
   };
   return (
     <div>

@@ -1,13 +1,21 @@
 import { useState } from "react";
-import { useMessagesContext } from "./MessagesProvider";
+import { useClient } from "./ClientProvider";
 
-type RoomProps = {
-  roomId: string;
-};
-
-const AttachUrl = ({ roomId }: RoomProps) => {
-  const { dispatchMessage } = useMessagesContext();
+const AttachUrl = () => {
+  const { dispatchMessage, state } = useClient();
   const [currentUrl, setCurrentUrl] = useState("");
+  const roomId = state.roomId;
+  const broadcastUrl = () => {
+    if (!currentUrl || !roomId) {
+      return;
+    }
+
+    dispatchMessage({
+      type: "setVideoUrl",
+      roomId: roomId,
+      url: currentUrl,
+    });
+  };
   return (
     <>
       <input
@@ -16,29 +24,20 @@ const AttachUrl = ({ roomId }: RoomProps) => {
         value={currentUrl}
         onChange={(event) => setCurrentUrl(event.target.value)}
       />
-      <button
-        disabled={!currentUrl}
-        onClick={() => {
-          dispatchMessage({
-            type: "setVideoUrl",
-            roomId: roomId,
-            url: currentUrl,
-          });
-        }}
-      >
+      <button disabled={!currentUrl} onClick={broadcastUrl}>
         Set Video URL
       </button>
     </>
   );
 };
 
-export const Room = ({ roomId }: RoomProps) => {
-  const { state } = useMessagesContext();
+export const Room = () => {
+  const { state } = useClient();
 
   console.log("Room state:", state);
 
   if (!state.url) {
-    return <AttachUrl roomId={roomId} />;
+    return <AttachUrl />;
   }
 
   return (
