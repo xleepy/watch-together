@@ -83,6 +83,42 @@ wss.on("connection", (ws) => {
 
           break;
         }
+        case "message": {
+          const { roomId, message, userId } = msg;
+          if (!rooms.has(roomId)) {
+            ws.send(
+              JSON.stringify({ type: "error", message: "Room not found" })
+            );
+            return;
+          }
+          const room = rooms.get(roomId);
+          const timestamp = Date.now();
+          sendMessageToClients(room, {
+            type: "messageReceived",
+            message,
+            userId,
+            timestamp,
+          });
+          break;
+        }
+        case "play":
+        case "pause": {
+          const { roomId, currentTime, userId } = msg;
+          if (!rooms.has(roomId)) {
+            ws.send(
+              JSON.stringify({ type: "error", message: "Room not found" })
+            );
+            return;
+          }
+          const room = rooms.get(roomId);
+          sendMessageToClients(room, {
+            type: "videoSync",
+            action: msg.type,
+            currentTime,
+            userId,
+          });
+          break;
+        }
         default:
           break;
       }

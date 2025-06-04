@@ -8,11 +8,23 @@ import {
   useState,
   type PropsWithChildren,
 } from "react";
+import { v4 as uuidv4 } from "uuid";
 
 interface AppState {
   isConnected: boolean;
   roomId?: string;
   url?: string;
+  userId?: string;
+  messages: Array<{
+    message: string;
+    userId: string;
+    timestamp: number;
+  }>;
+  videoState: {
+    isPlaying: boolean;
+    currentTime: number;
+    lastUpdated: number;
+  };
 }
 
 type MessageContextValue = {
@@ -34,6 +46,7 @@ export const messagesReducer = (state: AppState, action: Message): AppState => {
         isConnected: true,
         roomId: connectAction.roomId,
         url: connectAction.url,
+        userId: state.userId || uuidv4(),
       };
     }
     case "setVideoUrl": {
@@ -43,6 +56,31 @@ export const messagesReducer = (state: AppState, action: Message): AppState => {
         url: setVideoUrlAction.url,
       };
     }
+    case "messageReceived": {
+      const messageAction = action as ChatMessageReceived;
+      return {
+        ...state,
+        messages: [
+          ...state.messages,
+          {
+            message: messageAction.message,
+            userId: messageAction.userId,
+            timestamp: messageAction.timestamp,
+          },
+        ],
+      };
+    }
+    case "videoSync": {
+      const videoAction = action as VideoSyncReceived;
+      return {
+        ...state,
+        videoState: {
+          isPlaying: videoAction.action === "play",
+          currentTime: videoAction.currentTime,
+          lastUpdated: Date.now(),
+        },
+      };
+    }
     default:
       return state;
   }
@@ -50,6 +88,13 @@ export const messagesReducer = (state: AppState, action: Message): AppState => {
 
 const initialState: AppState = {
   isConnected: false,
+  messages: [],
+  userId: `User-${Math.random().toString(36).substr(2, 9)}`,
+  videoState: {
+    isPlaying: false,
+    currentTime: 0,
+    lastUpdated: 0,
+  },
 };
 
 export const ClientProvider = ({ children }: PropsWithChildren) => {
