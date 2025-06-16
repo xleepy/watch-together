@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from "react";
-import { useClient } from "./ClientProvider";
+import { useClientDispatch } from "./ClientProvider";
+import { useAppStore } from "./store";
 
 const AttachUrl = () => {
-  const { dispatchMessage, state } = useClient();
+  const dispatchMessage = useClientDispatch();
+  const roomId = useAppStore((state) => state.roomId);
   const [currentUrl, setCurrentUrl] = useState("");
-  const roomId = state.roomId;
   const broadcastUrl = () => {
     if (!currentUrl || !roomId) {
       return;
@@ -32,10 +33,11 @@ const AttachUrl = () => {
 };
 
 const EditUrl = () => {
-  const { dispatchMessage, state } = useClient();
-  const [editUrl, setEditUrl] = useState(state.url || "");
+  const dispatchMessage = useClientDispatch();
+  const url = useAppStore((state) => state.url);
+  const roomId = useAppStore((state) => state.roomId);
+  const [editUrl, setEditUrl] = useState(url || "");
   const [isEditing, setIsEditing] = useState(false);
-  const roomId = state.roomId;
 
   const handleSubmit = () => {
     if (!editUrl || !roomId) {
@@ -51,7 +53,7 @@ const EditUrl = () => {
   };
 
   const handleCancel = () => {
-    setEditUrl(state.url || "");
+    setEditUrl(url || "");
     setIsEditing(false);
   };
 
@@ -81,9 +83,12 @@ const EditUrl = () => {
 };
 
 const Chat = () => {
-  const { dispatchMessage, state } = useClient();
   const [newMessage, setNewMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messages = useAppStore((state) => state.messages);
+  const roomId = useAppStore((state) => state.roomId);
+  const userId = useAppStore((state) => state.userId);
+  const dispatchMessage = useClientDispatch();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -91,19 +96,19 @@ const Chat = () => {
 
   useEffect(() => {
     scrollToBottom();
-  }, [state.messages]);
+  }, [messages]);
 
   const handleSendMessage = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim() || !state.roomId || !state.userId) {
+    if (!newMessage.trim() || !roomId || !userId) {
       return;
     }
 
     dispatchMessage({
       type: "message",
-      roomId: state.roomId,
+      roomId: roomId,
       message: newMessage.trim(),
-      userId: state.userId,
+      userId: userId,
       timestamp: Date.now(),
     });
 
@@ -149,16 +154,14 @@ const Chat = () => {
           gap: "0.5rem",
         }}
       >
-        {state.messages.map((msg, index) => (
+        {messages.map((msg, index) => (
           <div
             key={index}
             style={{
               padding: "0.5rem",
               borderRadius: "4px",
-              backgroundColor:
-                msg.userId === state.userId ? "#e3f2fd" : "#f5f5f5",
-              alignSelf:
-                msg.userId === state.userId ? "flex-end" : "flex-start",
+              backgroundColor: msg.userId === userId ? "#e3f2fd" : "#f5f5f5",
+              alignSelf: msg.userId === userId ? "flex-end" : "flex-start",
               maxWidth: "80%",
             }}
           >
@@ -218,15 +221,19 @@ const Chat = () => {
 };
 
 const SynchronizedVideoPlayer = () => {
-  const { dispatchMessage, state } = useClient();
+  const videoState = useAppStore((state) => state.videoState);
+  const dispatchMessage = useClientDispatch();
   const videoRef = useRef<HTMLVideoElement>(null);
   const lastSyncRef = useRef<number>(0);
   const isUserActionRef = useRef<boolean>(false);
+  const roomId = useAppStore((state) => state.roomId);
+  const userId = useAppStore((state) => state.userId);
+  const url = useAppStore((state) => state.url);
 
   // Handle incoming video sync messages
   useEffect(() => {
     const video = videoRef.current;
-    if (!video || !state.videoState.lastUpdated) return;
+    if (!video || !videoState.lastUpdated) return;
 
     // Avoid infinite loops by checking if this is a recent sync
     if (Date.now() - lastSyncRef.current < 500) return;
@@ -234,7 +241,7 @@ const SynchronizedVideoPlayer = () => {
     lastSyncRef.current = Date.now();
     isUserActionRef.current = false; // This is a sync, not user action
 
-    const { isPlaying, currentTime } = state.videoState;
+    const { isPlaying, currentTime } = videoState;
 
     // Sync the video time if there's a significant difference
     if (Math.abs(video.currentTime - currentTime) > 1) {
@@ -247,7 +254,7 @@ const SynchronizedVideoPlayer = () => {
     } else if (!isPlaying && !video.paused) {
       video.pause();
     }
-  }, [state.videoState]);
+  }, [videoState]);
 
   const handlePlay = () => {
     if (!isUserActionRef.current) {
@@ -256,13 +263,13 @@ const SynchronizedVideoPlayer = () => {
     }
 
     const video = videoRef.current;
-    if (!video || !state.roomId || !state.userId) return;
+    if (!video || !roomId || !userId) return;
 
     dispatchMessage({
       type: "play",
-      roomId: state.roomId,
+      roomId: roomId,
       currentTime: video.currentTime,
-      userId: state.userId,
+      userId: userId,
     });
   };
 
@@ -273,13 +280,13 @@ const SynchronizedVideoPlayer = () => {
     }
 
     const video = videoRef.current;
-    if (!video || !state.roomId || !state.userId) return;
+    if (!video || !roomId || !userId) return;
 
     dispatchMessage({
       type: "pause",
-      roomId: state.roomId,
+      roomId: roomId,
       currentTime: video.currentTime,
-      userId: state.userId,
+      userId: userId,
     });
   };
 
@@ -297,7 +304,7 @@ const SynchronizedVideoPlayer = () => {
     <video
       ref={videoRef}
       className="video"
-      src={state.url}
+      src={url}
       crossOrigin="anonymous"
       controls
       onPlay={handleUserPlay}
@@ -308,11 +315,9 @@ const SynchronizedVideoPlayer = () => {
 };
 
 export const Room = () => {
-  const { state } = useClient();
+  const url = useAppStore((state) => state.url);
 
-  console.log("Room state:", state);
-
-  if (!state.url) {
+  if (!url) {
     return <AttachUrl />;
   }
 

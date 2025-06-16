@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { useClient } from "./ClientProvider";
+import { useClientDispatch } from "./ClientProvider";
 
 export const CreateRoom = () => {
-  const { dispatchMessage } = useClient();
+  const dispatchMessage = useClientDispatch();
   const createRoom = async () => {
     try {
       dispatchMessage({ type: "create" });
@@ -21,7 +21,7 @@ export const CreateRoom = () => {
 };
 
 const JoinRoom = () => {
-  const { dispatchMessage } = useClient();
+  const dispatchMessage = useClientDispatch();
   const [roomId, setRoomId] = useState("");
   const joinRoom = async () => {
     dispatchMessage({ type: "join", roomId });

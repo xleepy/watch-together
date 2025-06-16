@@ -1,11 +1,16 @@
 import { WebSocketServer } from "ws";
 import { config } from "dotenv";
 import { v4 as uuidv4 } from "uuid";
+import express from "express";
+import { createServer } from "http";
 config();
 
-const port = process.env.VITE_PORT || 3000;
+const app = express();
+app.use(express.static("dist"));
 
-const wss = new WebSocketServer({ port });
+const server = createServer(app);
+
+const wss = new WebSocketServer({ server });
 
 /** @type {Map<string, Room>} */
 const rooms = new Map();
@@ -126,4 +131,11 @@ wss.on("connection", (ws) => {
       console.error("Error parsing message:", error);
     }
   });
+});
+
+const port = process.env.VITE_PORT || 3000;
+
+server.listen(port, () => {
+  console.log(`Server is running on http://localhost:${port}`);
+  console.log(`WebSocket server is also running on ws://localhost:${port}`);
 });

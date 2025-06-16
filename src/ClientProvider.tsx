@@ -3,103 +3,22 @@ import {
   useCallback,
   useContext,
   useEffect,
-  useMemo,
-  useReducer,
   useState,
   type PropsWithChildren,
 } from "react";
-import { v4 as uuidv4 } from "uuid";
-
-interface AppState {
-  isConnected: boolean;
-  roomId?: string;
-  url?: string;
-  userId?: string;
-  messages: Array<{
-    message: string;
-    userId: string;
-    timestamp: number;
-  }>;
-  videoState: {
-    isPlaying: boolean;
-    currentTime: number;
-    lastUpdated: number;
-  };
-}
-
-type MessageContextValue = {
-  state: AppState;
-  dispatchMessage: (msg: GenericMessage) => void;
-};
-
-const MessagesContext = createContext<MessageContextValue | null>(null);
+import { useAppStore } from "./store";
 
 const port = import.meta.env.VITE_PORT || 3000;
 
-export const messagesReducer = (state: AppState, action: Message): AppState => {
-  switch (action.type) {
-    case "created":
-    case "joined": {
-      const connectAction = action as ConnectToRoomMessage;
-      return {
-        ...state,
-        isConnected: true,
-        roomId: connectAction.roomId,
-        url: connectAction.url,
-        userId: state.userId || uuidv4(),
-      };
-    }
-    case "setVideoUrl": {
-      const setVideoUrlAction = action as SetVideoUrlMessage;
-      return {
-        ...state,
-        url: setVideoUrlAction.url,
-      };
-    }
-    case "messageReceived": {
-      const messageAction = action as ChatMessageReceived;
-      return {
-        ...state,
-        messages: [
-          ...state.messages,
-          {
-            message: messageAction.message,
-            userId: messageAction.userId,
-            timestamp: messageAction.timestamp,
-          },
-        ],
-      };
-    }
-    case "videoSync": {
-      const videoAction = action as VideoSyncReceived;
-      return {
-        ...state,
-        videoState: {
-          isPlaying: videoAction.action === "play",
-          currentTime: videoAction.currentTime,
-          lastUpdated: Date.now(),
-        },
-      };
-    }
-    default:
-      return state;
-  }
-};
+type ClientProviderContextValue = (message: GenericMessage) => void;
 
-const initialState: AppState = {
-  isConnected: false,
-  messages: [],
-  userId: `User-${Math.random().toString(36).substr(2, 9)}`,
-  videoState: {
-    isPlaying: false,
-    currentTime: 0,
-    lastUpdated: 0,
-  },
-};
+const ClientProviderContext = createContext<ClientProviderContextValue | null>(
+  null
+);
 
 export const ClientProvider = ({ children }: PropsWithChildren) => {
   const [client, setClient] = useState<WebSocket | null>(null);
-  const [state, dispatch] = useReducer(messagesReducer, initialState);
+  const dispatch = useAppStore((state) => state.dispatch);
   useEffect(() => {
     const client = new WebSocket(`ws://localhost:${port}`);
     client.onopen = () => {
@@ -123,37 +42,39 @@ export const ClientProvider = ({ children }: PropsWithChildren) => {
       client.close();
       console.log("WebSocket connection closed");
     };
-  }, []);
+  }, [dispatch]);
 
   const dispatchMessage = useCallback(
-    (msg: GenericMessage) => {
-      if (client && client.readyState === WebSocket.OPEN) {
-        client.send(JSON.stringify(msg));
+    (message: GenericMessage) => {
+      if (!client || client.readyState !== WebSocket.OPEN) {
+        console.error("WebSocket is not open. Cannot send message:", message);
+        return;
+      }
+      try {
+        const messageString = JSON.stringify(message);
+        console.log("Sending message:", messageString);
+        client.send(messageString);
+      } catch (error) {
+        console.error("Error sending message:", error);
       }
     },
     [client]
   );
 
-  const contextValue: MessageContextValue = useMemo(() => {
-    return { state, dispatchMessage };
-  }, [state, dispatchMessage]);
-
   if (!client || client.readyState === WebSocket.CLOSED) {
     return <div>Connection closed or not established</div>;
   }
   return (
-    <MessagesContext.Provider value={contextValue}>
+    <ClientProviderContext.Provider value={dispatchMessage}>
       {children}
-    </MessagesContext.Provider>
+    </ClientProviderContext.Provider>
   );
 };
 
-export const useClient = () => {
-  const context = useContext(MessagesContext);
+export const useClientDispatch = () => {
+  const context = useContext(ClientProviderContext);
   if (!context) {
-    throw new Error(
-      "useMessagesContext must be used within a MessagesProvider"
-    );
+    throw new Error("useClientDispatch must be used within a ClientProvider");
   }
   return context;
 };
