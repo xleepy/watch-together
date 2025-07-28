@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useClientDispatch } from "./ClientProvider";
+import { useClientDispatch } from "../providers";
 
 export const CreateRoom = () => {
   const dispatchMessage = useClientDispatch();
@@ -23,9 +23,11 @@ export const CreateRoom = () => {
 const JoinRoom = () => {
   const dispatchMessage = useClientDispatch();
   const [roomId, setRoomId] = useState("");
+
   const joinRoom = async () => {
     dispatchMessage({ type: "join", roomId });
   };
+
   return (
     <div>
       <input

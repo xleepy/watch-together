@@ -1,20 +1,18 @@
 import {
   createContext,
   useCallback,
-  useContext,
   useEffect,
   useState,
   type PropsWithChildren,
 } from "react";
-import { useAppStore } from "./store";
+import { useAppStore } from "../../store";
 
 const port = import.meta.env.VITE_PORT || 3000;
 
 type ClientProviderContextValue = (message: GenericMessage) => void;
 
-const ClientProviderContext = createContext<ClientProviderContextValue | null>(
-  null
-);
+export const ClientProviderContext =
+  createContext<ClientProviderContextValue | null>(null);
 
 export const ClientProvider = ({ children }: PropsWithChildren) => {
   const [client, setClient] = useState<WebSocket | null>(null);
@@ -69,12 +67,4 @@ export const ClientProvider = ({ children }: PropsWithChildren) => {
       {children}
     </ClientProviderContext.Provider>
   );
-};
-
-export const useClientDispatch = () => {
-  const context = useContext(ClientProviderContext);
-  if (!context) {
-    throw new Error("useClientDispatch must be used within a ClientProvider");
-  }
-  return context;
 };

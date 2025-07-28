@@ -1,6 +1,6 @@
 import "./App.css";
-import { CreateRoom } from "./CreateRoom";
-import { Room } from "./Room";
+import { CreateRoom } from "./components/create-room/CreateRoom";
+import { Room } from "./components/room/Room";
 import { useAppStore } from "./store";
 
 function App() {
@@ -11,7 +11,7 @@ function App() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-24">
+    <div className="app">
       <p>{`Your room id ${roomId}`}</p>
       <Room />
     </div>

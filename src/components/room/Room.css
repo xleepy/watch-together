@@ -1,0 +1,10 @@
+.room-container {
+  display: flex;
+}
+
+.room-container__video {
+  flex: 1;
+  display: flex;
+  padding: 1rem;
+  flex-direction: column;
+}
