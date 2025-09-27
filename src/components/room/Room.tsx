@@ -9,7 +9,6 @@ import { useParams } from "react-router";
 import { useEffect } from "react";
 
 
-
 const RoomInternal = () => {
   const url = useAppStore((state) => state.url);
 
@@ -57,7 +56,6 @@ export const Room = () => {
       } catch (error) {
         const respError = error as Error
         if (respError.name === 'AbortError') {
-          console.log('Fetch aborted');
         } else {
           console.error("Error fetching room details:", error);
         }
@@ -70,6 +68,7 @@ export const Room = () => {
   }, [roomId, dispatch])
 
   return <ClientProvider roomId={roomId}>
+    <div className="id-container">{`Your room id is ${roomId}`}</div>
     <RoomInternal />
   </ClientProvider>
 }
