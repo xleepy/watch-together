@@ -3,6 +3,7 @@ import { useAppStore } from "../../store";
 import { useClientDispatch } from "../providers";
 import classNames from "classnames";
 import "./Player.css";
+import { useParams } from "react-router";
 
 type PlayerProps = {
   className?: string;
@@ -14,16 +15,13 @@ export const Player = ({ className }: PlayerProps) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const lastSyncRef = useRef<number>(0);
   const isUserActionRef = useRef<boolean>(false);
-  const roomId = useAppStore((state) => state.roomId);
+  const { roomId } = useParams<{ roomId: string }>();
   const userId = useAppStore((state) => state.userId);
   const url = useAppStore((state) => state.url);
 
   useEffect(() => {
     const video = videoRef.current;
-    if (!video || !videoState.lastUpdated) return;
-
-    if (Date.now() - lastSyncRef.current < 500) return;
-
+    if (!video) return;
     lastSyncRef.current = Date.now();
     isUserActionRef.current = false;
 

@@ -1,14 +1,15 @@
 type MessageType =
   | "created"
-  | "create"
+  | "created-room"
   | "join"
-  | "joined"
+  | "joined-room"
   | "play"
   | "pause"
   | "message"
   | "messageReceived"
   | "setVideoUrl"
-  | "videoSync";
+  | "videoSync"
+  | "connected";
 
 interface Client {
   id: string;
@@ -27,9 +28,16 @@ type GenericMessage = {
   type: MessageType;
 };
 
-type ConnectToRoomMessage = {
-  type: "created" | "joined";
+type ConnectedMessage = {
+  type: "connected";
   roomId: string;
+  userId: string;
+};
+
+type ConnectToRoomMessage = {
+  type: "created-room" | "joined-room";
+  roomId: string;
+  clientId: string;
   url?: string;
 };
 

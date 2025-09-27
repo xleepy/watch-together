@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useAppStore } from "../../store";
 import { useClientDispatch } from "../providers";
 import "./Chat.css";
+import { useParams } from "react-router";
 
 type ChatProps = {
   className?: string;
@@ -11,7 +12,7 @@ export const Chat = ({ className }: ChatProps) => {
   const [newMessage, setNewMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messages = useAppStore((state) => state.messages);
-  const roomId = useAppStore((state) => state.roomId);
+  const { roomId } = useParams<{ roomId: string }>();
   const userId = useAppStore((state) => state.userId);
   const dispatchMessage = useClientDispatch();
 
@@ -29,7 +30,7 @@ export const Chat = ({ className }: ChatProps) => {
       type: "message",
       roomId: roomId,
       message: newMessage.trim(),
-      userId: userId,
+      userId,
       timestamp: Date.now(),
     });
 

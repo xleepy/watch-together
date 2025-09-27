@@ -2,7 +2,6 @@ import { create } from "zustand";
 import { v4 as uuidv4 } from "uuid";
 
 interface AppState {
-  isConnected: boolean;
   roomId?: string;
   url?: string;
   userId?: string;
@@ -28,15 +27,12 @@ interface AppState {
 
 export const messagesReducer = (state: AppState, action: Message): AppState => {
   switch (action.type) {
-    case "created":
-    case "joined": {
-      const connectAction = action as ConnectToRoomMessage;
+    case "joined-room":
+    case "created-room": {
+      const createdAction = action as ConnectToRoomMessage;
       return {
         ...state,
-        isConnected: true,
-        roomId: connectAction.roomId,
-        url: connectAction.url,
-        userId: state.userId || uuidv4(),
+        roomId: createdAction.roomId,
       };
     }
     case "setVideoUrl": {
@@ -78,10 +74,9 @@ export const messagesReducer = (state: AppState, action: Message): AppState => {
 
 export const useAppStore = create<AppState>((set) => {
   return {
-    isConnected: false,
     roomId: undefined,
     url: undefined,
-    userId: undefined,
+    userId: uuidv4(),
     messages: [],
     videoState: {
       isPlaying: false,

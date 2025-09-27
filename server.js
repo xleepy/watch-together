@@ -3,20 +3,13 @@ import { config } from "dotenv";
 import { v4 as uuidv4 } from "uuid";
 import express from "express";
 import { createServer } from "http";
+import cors from "cors";
 config();
 
 const app = express();
 app.use(express.static("dist"));
-
-// Security and CORS headers for production
-app.use((req, res, next) => {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header(
-    "Access-Control-Allow-Headers",
-    "Origin, X-Requested-With, Content-Type, Accept"
-  );
-  next();
-});
+app.use(cors());
+app.use(express.json());
 
 const server = createServer(app);
 
@@ -33,15 +26,42 @@ function createRoom(roomId) {
 
 function sendMessageToClients(room, message) {
   room.clients.forEach((client) => {
-    client.ws.send(JSON.stringify(message));
+    client.send(JSON.stringify(message));
   });
 }
+
+app.post("/create-room", (req, res) => {
+  const roomId = uuidv4();
+  createRoom(roomId);
+  return res.json({ roomId });
+});
+
+app.post("/join-room", (req, res) => {
+  const { roomId } = req.body;
+  if (!rooms.has(roomId)) {
+    return res.status(404).json({ error: "Room not found" });
+  }
+
+  const room = rooms.get(roomId);
+  /** @type {Client} */
+  return res.json({ roomId, url: room.url });
+});
+
+app.get("/rooms/:roomId", (req, res) => {
+  const { roomId } = req.params;
+  if (!rooms.has(roomId)) {
+    return res.status(404).json({ error: "Room not found" });
+  }
+  const room = rooms.get(roomId);
+  return res.json({ roomId: room.id, url: room.url });
+});
 
 // WebSocket connection handling
 wss.on("connection", (ws) => {
   ws.on("error", (error) => {
     console.error("WebSocket error:", error);
   });
+
   ws.on("open", () => {
     console.log("WebSocket connection opened");
   });
@@ -52,32 +72,18 @@ wss.on("connection", (ws) => {
       const msg = JSON.parse(message.toString());
       console.log("Received message:", msg);
       switch (msg.type) {
-        case "create": {
-          const roomId = uuidv4();
-          const room = createRoom(roomId);
-          /** @type {Client} */
-          const client = { id: uuidv4(), ws, role: "host" };
-          room.clients.add(client);
-          ws.send(JSON.stringify({ type: "created", roomId }));
-          break;
-        }
-        case "join": {
+        case "connected": {
           const { roomId } = msg;
-          if (!rooms.has(roomId)) {
+          const room = rooms.get(roomId);
+          if (!room) {
             ws.send(
               JSON.stringify({ type: "error", message: "Room not found" })
             );
             return;
           }
-          const room = rooms.get(roomId);
+          room.clients.add(ws);
           /** @type {Client} */
-          const client = { id: uuidv4(), ws, role: "guest" };
-          room.clients.add(client);
-          sendMessageToClients(room, {
-            type: "joined",
-            roomId: room.id,
-            clientId: client.id,
-          });
+          ws.send(JSON.stringify({ type: "connected", roomId }));
           break;
         }
         case "setVideoUrl": {
@@ -95,7 +101,6 @@ wss.on("connection", (ws) => {
             roomId: room.id,
             url,
           });
-
           break;
         }
         case "message": {

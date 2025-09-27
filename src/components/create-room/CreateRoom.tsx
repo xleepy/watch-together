@@ -1,11 +1,27 @@
 import { useState } from "react";
-import { useClientDispatch } from "../providers";
+import { useAppStore } from "../../store";
+import { useNavigate } from "react-router";
+import { host } from "../../constants";
+
 
 export const CreateRoom = () => {
-  const dispatchMessage = useClientDispatch();
+  const dispatch = useAppStore((state) => state.dispatch);
+  const navigate = useNavigate()
   const createRoom = async () => {
     try {
-      dispatchMessage({ type: "create" });
+      const response = await fetch(`http://${host}:3000/create-room`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+      if (!response.ok) {
+        throw new Error("Failed to create room");
+
+      }
+      const { roomId } = await response.json();
+      dispatch({ type: "created-room", roomId, });
+      navigate(`/room/${roomId}`)
     } catch (error) {
       console.error("Error creating room:", error);
     }
@@ -21,11 +37,26 @@ export const CreateRoom = () => {
 };
 
 const JoinRoom = () => {
-  const dispatchMessage = useClientDispatch();
+  const dispatch = useAppStore((state) => state.dispatch);
+  const navigate = useNavigate()
   const [roomId, setRoomId] = useState("");
 
   const joinRoom = async () => {
-    dispatchMessage({ type: "join", roomId });
+    const response = await fetch(`http://${host}:3000/join-room`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ roomId })
+    })
+    if (!response.ok) {
+      console.error("Failed to join room");
+      return;
+    }
+    const { roomId: joinedRoomId, url } = await response.json();
+    dispatch({ type: "joined-room", roomId: joinedRoomId, url });
+    navigate(`/room/${joinedRoomId}`)
+
   };
 
   return (

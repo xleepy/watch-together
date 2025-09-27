@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { useAppStore } from "../../store";
 import { useClientDispatch } from "../providers";
+import { useParams } from "react-router";
 
 export const AttachUrl = () => {
   const dispatchMessage = useClientDispatch();
-  const roomId = useAppStore((state) => state.roomId);
+  const { roomId } = useParams<{ roomId: string }>();
   const [currentUrl, setCurrentUrl] = useState("");
 
   const broadcastUrl = () => {
