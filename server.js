@@ -145,7 +145,7 @@ wss.on("connection", (ws) => {
 
 // Use environment variable for port, fallback to 3000
 const port = process.env.PORT || process.env.VITE_PORT || 3000;
-const host = process.env.HOST || "127.0.0.1";
+const host = process.env.VITE_HOST || "127.0.0.1";
 
 server.listen(port, host, () => {
   console.log(`Server is running on http://${host}:${port}`);
