@@ -7,6 +7,7 @@ import "./Room.css";
 import { ClientProvider, } from "../providers";
 import { useParams } from "react-router";
 import { useEffect } from "react";
+import { basePath } from "../../constants";
 
 
 const RoomInternal = () => {
@@ -41,7 +42,7 @@ export const Room = () => {
 
     const fetchRoomDetails = async () => {
       try {
-        const roomDetails = await fetch(`http://localhost:3000/rooms/${roomId}`, {
+        const roomDetails = await fetch(`${basePath}/rooms/${roomId}`, {
           method: "GET",
           signal: abortController.signal,
         });

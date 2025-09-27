@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useAppStore } from "../../store";
 import { useNavigate } from "react-router";
-import { host } from "../../constants";
+import { basePath } from "../../constants";
 
 
 export const CreateRoom = () => {
@@ -9,7 +9,7 @@ export const CreateRoom = () => {
   const navigate = useNavigate()
   const createRoom = async () => {
     try {
-      const response = await fetch(`http://${host}:3000/create-room`, {
+      const response = await fetch(`${basePath}/create-room`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -42,7 +42,7 @@ const JoinRoom = () => {
   const [roomId, setRoomId] = useState("");
 
   const joinRoom = async () => {
-    const response = await fetch(`http://${host}:3000/join-room`, {
+    const response = await fetch(`${basePath}/join-room`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
