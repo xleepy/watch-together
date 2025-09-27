@@ -58,6 +58,18 @@ app.get("/rooms/:roomId", (req, res) => {
 
 // WebSocket connection handling
 wss.on("connection", (ws) => {
+  ws.on("close", () => {
+    rooms.forEach((room) => {
+      if (room.clients.has(ws)) {
+        room.clients.delete(ws);
+        if (room.clients.size === 0) {
+          rooms.delete(room.id);
+          console.log(`Room ${room.id} deleted due to no clients`);
+        }
+      }
+    });
+  });
+
   ws.on("error", (error) => {
     console.error("WebSocket error:", error);
   });
