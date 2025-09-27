@@ -8,6 +8,16 @@ config();
 const app = express();
 app.use(express.static("dist"));
 
+// Security and CORS headers for production
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header(
+    "Access-Control-Allow-Headers",
+    "Origin, X-Requested-With, Content-Type, Accept"
+  );
+  next();
+});
+
 const server = createServer(app);
 
 const wss = new WebSocketServer({ server });
@@ -133,9 +143,11 @@ wss.on("connection", (ws) => {
   });
 });
 
-const port = process.env.VITE_PORT || 3000;
+// Use environment variable for port, fallback to 3000
+const port = process.env.PORT || process.env.VITE_PORT || 3000;
+const host = process.env.HOST || "127.0.0.1";
 
-server.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`);
-  console.log(`WebSocket server is also running on ws://localhost:${port}`);
+server.listen(port, host, () => {
+  console.log(`Server is running on http://${host}:${port}`);
+  console.log(`WebSocket server is also running on ws://${host}:${port}`);
 });
