@@ -18,7 +18,8 @@ export const ClientProvider = ({ children }: PropsWithChildren) => {
   const [client, setClient] = useState<WebSocket | null>(null);
   const dispatch = useAppStore((state) => state.dispatch);
   useEffect(() => {
-    const client = new WebSocket(`ws://localhost:${port}`);
+    const host = import.meta.env.VITE_HOST || "localhost"
+    const client = new WebSocket(`ws://${host}:${port}`);
     client.onopen = () => {
       console.log("WebSocket connection opened");
     };
