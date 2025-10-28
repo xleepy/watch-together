@@ -1,4 +1,4 @@
-import { use, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, } from "react";
 import { useAppStore } from "../../store";
 import { useClient } from "../providers";
 import classNames from "classnames";
