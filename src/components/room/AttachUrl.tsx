@@ -1,11 +1,11 @@
 import { useState } from "react";
 import type { ChangeEvent } from "react";
-import { useClientDispatch } from "../providers";
+import { useClient } from "../providers";
 import { useParams } from "react-router";
 import { basePath } from "../../constants";
 
 export const AttachUrl = () => {
-  const dispatchMessage = useClientDispatch();
+  const { dispatchMessage } = useClient();
   const { roomId } = useParams<{ roomId: string }>();
   const [currentUrl, setCurrentUrl] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);

@@ -1,6 +1,6 @@
-import { useEffect, useRef } from "react";
+import { use, useEffect, useRef, useState } from "react";
 import { useAppStore } from "../../store";
-import { useClientDispatch } from "../providers";
+import { useClient } from "../providers";
 import classNames from "classnames";
 import "./Player.css";
 import { useParams } from "react-router";
@@ -9,43 +9,63 @@ type PlayerProps = {
   className?: string;
 };
 
+type PlayerEvents = VideoPlayMessage | VideoPauseMessage | VideoSyncReceived;
+
 export const Player = ({ className }: PlayerProps) => {
-  const videoState = useAppStore((state) => state.videoState);
-  const dispatchMessage = useClientDispatch();
+  const { dispatchMessage, client } = useClient();
   const videoRef = useRef<HTMLVideoElement>(null);
-  const lastSyncRef = useRef<number>(0);
-  const isUserActionRef = useRef<boolean>(false);
   const { roomId } = useParams<{ roomId: string }>();
   const userId = useAppStore((state) => state.userId);
   const url = useAppStore((state) => state.url);
-  const { isPlaying, currentTime } = videoState;
 
   useEffect(() => {
     const video = videoRef.current;
-    if (!video) return;
-    lastSyncRef.current = Date.now();
-    isUserActionRef.current = false;
-
-
-    if (Math.abs(video.currentTime - currentTime) > 1) {
-      video.currentTime = currentTime;
+    if (!client || !video) {
+      return;
     }
 
-    if (isPlaying && video.paused) {
-      video.play().catch(console.error);
-    } else if (!isPlaying && !video.paused) {
-      video.pause();
+    console.log('here')
+    video.click()
+
+    const handlePlayerMessage = (event: MessageEvent<string>) => {
+      const { dispatch } = useAppStore.getState();
+      try {
+        const receivedMsg: PlayerEvents = JSON.parse(event.data);
+        const sameUser = 'userId' in receivedMsg && receivedMsg.userId === userId
+        console.log("Received message:", receivedMsg);
+        console.log('is same user:', sameUser)
+        if (sameUser) {
+          // Ignore messages sent by self
+          return;
+        }
+
+        const { action, currentTime, type } = receivedMsg as any
+        if (type === "videoSync") {
+          video.currentTime = currentTime;
+          if (action === "play") {
+            video.play();
+          } else {
+            video.pause();
+          }
+        }
+
+        dispatch(receivedMsg);
+      } catch (err) {
+        console.error("Error parsing message:", err);
+      }
     }
-  }, [currentTime, isPlaying]);
+
+    client.addEventListener('message', handlePlayerMessage)
+    return () => {
+      client.removeEventListener('message', handlePlayerMessage);
+    }
+  }, [client, userId]);
+
 
   const handlePlay = () => {
-    if (!isUserActionRef.current) {
-      isUserActionRef.current = true;
-      return; // This was triggered by sync, don't send message
-    }
-
     const video = videoRef.current;
     if (!video || !roomId || !userId) return;
+    console.log("Dispatching play message");
 
     dispatchMessage({
       type: "play",
@@ -56,11 +76,6 @@ export const Player = ({ className }: PlayerProps) => {
   };
 
   const handlePause = () => {
-    if (!isUserActionRef.current) {
-      isUserActionRef.current = true;
-      return; // This was triggered by sync, don't send message
-    }
-
     const video = videoRef.current;
     if (!video || !roomId || !userId) return;
 
@@ -72,16 +87,6 @@ export const Player = ({ className }: PlayerProps) => {
     });
   };
 
-  const handleUserPlay = () => {
-    isUserActionRef.current = true;
-    handlePlay();
-  };
-
-  const handleUserPause = () => {
-    isUserActionRef.current = true;
-    handlePause();
-  };
-
   return (
     <video
       ref={videoRef}
@@ -89,8 +94,8 @@ export const Player = ({ className }: PlayerProps) => {
       src={url}
       crossOrigin="anonymous"
       controls
-      onPlay={handleUserPlay}
-      onPause={handleUserPause}
+      onPlay={handlePlay}
+      onPause={handlePause}
     />
   );
 };

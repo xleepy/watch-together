@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useAppStore } from "../../store";
-import { useClientDispatch } from "../providers";
+import { useClient } from "../providers";
 import "./Chat.css";
 import { useParams } from "react-router";
 
@@ -14,7 +14,7 @@ export const Chat = ({ className }: ChatProps) => {
   const messages = useAppStore((state) => state.messages);
   const { roomId } = useParams<{ roomId: string }>();
   const userId = useAppStore((state) => state.userId);
-  const dispatchMessage = useClientDispatch();
+  const { dispatchMessage } = useClient();
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });

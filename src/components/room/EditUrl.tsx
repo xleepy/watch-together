@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useAppStore } from "../../store";
-import { useClientDispatch } from "../providers";
+import { useClient } from "../providers";
 import "./EditUrl.css";
 import { useParams } from "react-router";
 
 export const EditUrl = () => {
-  const dispatchMessage = useClientDispatch();
+  const { dispatchMessage } = useClient();
   const url = useAppStore((state) => state.url);
   const { roomId } = useParams<{ roomId: string }>();
   const [editUrl, setEditUrl] = useState(url || "");

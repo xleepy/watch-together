@@ -2,6 +2,7 @@ import {
   createContext,
   useCallback,
   useEffect,
+  useMemo,
   useState,
   type PropsWithChildren,
 } from "react";
@@ -10,7 +11,10 @@ import { host } from "../../constants";
 
 const port = import.meta.env.VITE_PORT || 3000;
 
-type ClientProviderContextValue = (message: GenericMessage) => void;
+type ClientProviderContextValue = {
+  dispatchMessage: (message: GenericMessage) => void;
+  client: WebSocket | null;
+};
 
 export const ClientProviderContext =
   createContext<ClientProviderContextValue | null>(null);
@@ -30,20 +34,30 @@ export const ClientProvider = ({ children, roomId }: ClientProviderProps) => {
       console.log("WebSocket connection opened");
       client.send(JSON.stringify({ type: "connected", roomId }))
     };
-    client.onmessage = (event) => {
+
+    const handleGenericMessage = (message: MessageEvent<string>) => {
       try {
-        const receivedMsg: GenericMessage = JSON.parse(event.data);
+        const receivedMsg: Message = JSON.parse(message.data);
+        const playerEvents = ["play", "pause", "videoSync"]
+        const sameUser = 'userId' in receivedMsg && receivedMsg.userId === userId
+        if (playerEvents.includes(receivedMsg.type) || sameUser) {
+          // Ignore messages sent by self
+          return;
+        }
         dispatch(receivedMsg);
       } catch (err) {
         console.error("Error parsing message:", err);
       }
-    };
+    }
+
+    client.addEventListener('message', handleGenericMessage);
     client.onerror = (error) => {
       console.error("WebSocket error:", error);
     };
 
     setClient(client);
     return () => {
+      client.removeEventListener('message', handleGenericMessage);
       client.close();
       console.log("WebSocket connection closed");
     };
@@ -65,11 +79,18 @@ export const ClientProvider = ({ children, roomId }: ClientProviderProps) => {
     [client]
   );
 
+  const contextValue = useMemo(() => {
+    return {
+      dispatchMessage,
+      client
+    }
+  }, [client, dispatchMessage]);
+
   if (!client || client.readyState === WebSocket.CLOSED) {
     return <div>Connection closed or not established</div>;
   }
   return (
-    <ClientProviderContext.Provider value={dispatchMessage}>
+    <ClientProviderContext.Provider value={contextValue}>
       {children}
     </ClientProviderContext.Provider>
   );
