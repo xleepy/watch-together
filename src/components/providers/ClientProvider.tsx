@@ -38,9 +38,8 @@ export const ClientProvider = ({ children, roomId }: ClientProviderProps) => {
     const handleGenericMessage = (message: MessageEvent<string>) => {
       try {
         const receivedMsg: Message = JSON.parse(message.data);
-        const playerEvents = ["play", "pause", "videoSync"]
-        const sameUser = 'userId' in receivedMsg && receivedMsg.userId === userId
-        if (playerEvents.includes(receivedMsg.type) || sameUser) {
+        const playerEvents = ["videoSync"]
+        if (playerEvents.includes(receivedMsg.type)) {
           // Ignore messages sent by self
           return;
         }

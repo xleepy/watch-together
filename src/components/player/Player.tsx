@@ -26,6 +26,7 @@ export const Player = ({ className }: PlayerProps) => {
 
     console.log('here')
     video.click()
+    video.volume = 0.4
 
     const handlePlayerMessage = (event: MessageEvent<string>) => {
       const { dispatch } = useAppStore.getState();
