@@ -18,6 +18,7 @@ export const Player = ({ className }: PlayerProps) => {
   const { roomId } = useParams<{ roomId: string }>();
   const userId = useAppStore((state) => state.userId);
   const url = useAppStore((state) => state.url);
+  const { isPlaying, currentTime } = videoState;
 
   useEffect(() => {
     const video = videoRef.current;
@@ -25,7 +26,6 @@ export const Player = ({ className }: PlayerProps) => {
     lastSyncRef.current = Date.now();
     isUserActionRef.current = false;
 
-    const { isPlaying, currentTime } = videoState;
 
     if (Math.abs(video.currentTime - currentTime) > 1) {
       video.currentTime = currentTime;
@@ -36,7 +36,7 @@ export const Player = ({ className }: PlayerProps) => {
     } else if (!isPlaying && !video.paused) {
       video.pause();
     }
-  }, [videoState]);
+  }, [currentTime, isPlaying]);
 
   const handlePlay = () => {
     if (!isUserActionRef.current) {

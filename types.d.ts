@@ -44,6 +44,8 @@ type ConnectToRoomMessage = {
 type SetVideoUrlMessage = {
   type: "setVideoUrl";
   url: string;
+  roomId?: string;
+  origin?: "upload" | "manual";
 };
 
 type ChatMessage = {
